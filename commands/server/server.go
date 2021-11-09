@@ -1,8 +1,8 @@
 package main
 
 import (
-	internalRpc "go-grpc/internal/rpc"
-	"go-grpc/internal/services/sample"
+	"go-grpc/internal/rpc"
+	"go-grpc/internal/services/todo"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -16,7 +16,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	internalRpc.RegisterSampleServiceServer(s , &sample.SampleServiceServer{})
+	rpc.RegisterTodoServiceServer(s , &todo.TodoServiceServer{})
 
 	log.Printf("server listening at %v" , lis.Addr())
 	if err := s.Serve(lis); err != nil {
