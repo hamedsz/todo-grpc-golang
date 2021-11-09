@@ -19,15 +19,33 @@ func main() {
 	}
 	defer conn.Close()
 
-	c := rpc.NewSampleServiceClient(conn)
+	c := rpc.NewTodoServiceClient(conn)
 	ctx  , cancel := context.WithTimeout(context.Background() , time.Second)
 	defer cancel()
 
-	result , err := c.CreateSample(ctx , &rpc.NewSample{
-		Name: "hello world",
+	createTodo(c , ctx)
+	indexTodos(c , ctx)
+}
+
+func createTodo(c rpc.TodoServiceClient , ctx context.Context)  {
+
+	result , err := c.Create(ctx , &rpc.NewTodo{
+		Title: "hello world",
+		Content: "hello world content",
 	})
 	if err != nil {
-		log.Fatalf("could not create sample: %v" , err)
+		log.Fatalf("could not create todo: %v" , err)
 	}
-	log.Printf("user detail: %v" , result)
+	log.Printf("todo detail: %v" , result)
+}
+
+func indexTodos(c rpc.TodoServiceClient , ctx context.Context)  {
+
+	result , err := c.Index(ctx , &rpc.Empty{})
+	if err != nil {
+		log.Fatalf("could not index todo")
+	}
+
+	log.Println("list todos")
+	log.Println(result)
 }
