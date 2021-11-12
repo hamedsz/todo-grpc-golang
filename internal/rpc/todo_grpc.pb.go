@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TodoServiceClient interface {
 	Index(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IndexResponse, error)
+	StreamIndex(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TodoService_StreamIndexClient, error)
 	Create(ctx context.Context, in *NewTodo, opts ...grpc.CallOption) (*Todo, error)
 	Update(ctx context.Context, in *Todo, opts ...grpc.CallOption) (*Todo, error)
 	Show(ctx context.Context, in *TodoId, opts ...grpc.CallOption) (*Todo, error)
@@ -40,6 +41,38 @@ func (c *todoServiceClient) Index(ctx context.Context, in *Empty, opts ...grpc.C
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *todoServiceClient) StreamIndex(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TodoService_StreamIndexClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TodoService_ServiceDesc.Streams[0], "/todo.TodoService/StreamIndex", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &todoServiceStreamIndexClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TodoService_StreamIndexClient interface {
+	Recv() (*IndexResponse, error)
+	grpc.ClientStream
+}
+
+type todoServiceStreamIndexClient struct {
+	grpc.ClientStream
+}
+
+func (x *todoServiceStreamIndexClient) Recv() (*IndexResponse, error) {
+	m := new(IndexResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *todoServiceClient) Create(ctx context.Context, in *NewTodo, opts ...grpc.CallOption) (*Todo, error) {
@@ -83,6 +116,7 @@ func (c *todoServiceClient) Delete(ctx context.Context, in *TodoId, opts ...grpc
 // for forward compatibility
 type TodoServiceServer interface {
 	Index(context.Context, *Empty) (*IndexResponse, error)
+	StreamIndex(*Empty, TodoService_StreamIndexServer) error
 	Create(context.Context, *NewTodo) (*Todo, error)
 	Update(context.Context, *Todo) (*Todo, error)
 	Show(context.Context, *TodoId) (*Todo, error)
@@ -96,6 +130,9 @@ type UnimplementedTodoServiceServer struct {
 
 func (UnimplementedTodoServiceServer) Index(context.Context, *Empty) (*IndexResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Index not implemented")
+}
+func (UnimplementedTodoServiceServer) StreamIndex(*Empty, TodoService_StreamIndexServer) error {
+	return status.Errorf(codes.Unimplemented, "method StreamIndex not implemented")
 }
 func (UnimplementedTodoServiceServer) Create(context.Context, *NewTodo) (*Todo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
@@ -138,6 +175,27 @@ func _TodoService_Index_Handler(srv interface{}, ctx context.Context, dec func(i
 		return srv.(TodoServiceServer).Index(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _TodoService_StreamIndex_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TodoServiceServer).StreamIndex(m, &todoServiceStreamIndexServer{stream})
+}
+
+type TodoService_StreamIndexServer interface {
+	Send(*IndexResponse) error
+	grpc.ServerStream
+}
+
+type todoServiceStreamIndexServer struct {
+	grpc.ServerStream
+}
+
+func (x *todoServiceStreamIndexServer) Send(m *IndexResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _TodoService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -240,6 +298,12 @@ var TodoService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TodoService_Delete_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamIndex",
+			Handler:       _TodoService_StreamIndex_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "todo.proto",
 }

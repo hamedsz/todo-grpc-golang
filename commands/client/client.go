@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"go-grpc/internal/rpc"
 	"google.golang.org/grpc"
 	"log"
@@ -13,6 +14,7 @@ const (
 )
 
 func main() {
+
 	conn , err := grpc.Dial(address , grpc.WithInsecure() , grpc.WithBlock())
 	if err != nil{
 		log.Fatalf("did not connect: %v" , err)
@@ -23,8 +25,11 @@ func main() {
 	ctx  , cancel := context.WithTimeout(context.Background() , time.Second)
 	defer cancel()
 
-	createTodo(c , ctx)
-	indexTodos(c , ctx)
+	before := time.Now().UnixNano() / int64(time.Millisecond)
+	showTodo(c , ctx)
+	after := time.Now().UnixNano() / int64(time.Millisecond)
+
+	fmt.Println(after - before)
 }
 
 func createTodo(c rpc.TodoServiceClient , ctx context.Context)  {
@@ -48,4 +53,24 @@ func indexTodos(c rpc.TodoServiceClient , ctx context.Context)  {
 
 	log.Println("list todos")
 	log.Println(result)
+}
+
+func deleteTodo(c rpc.TodoServiceClient , ctx context.Context)  {
+	_ , err := c.Delete(ctx , &rpc.TodoId{
+		Id: 1,
+	})
+	if err != nil {
+		log.Fatalf("could not delete todo")
+	}
+}
+
+func showTodo(c rpc.TodoServiceClient , ctx context.Context)  {
+	result , err := c.Show(ctx , &rpc.TodoId{
+		Id: 2,
+	})
+	if err != nil {
+		log.Fatalf("could not delete todo")
+	}
+
+	fmt.Println(result)
 }

@@ -6,6 +6,7 @@ option go_package = "example.com/go_grpc_template;rpc";
 
 service TodoService {
   rpc Index (Empty) returns (IndexResponse);
+  rpc StreamIndex (Empty) returns (stream IndexResponse);
   rpc Create (NewTodo) returns (Todo);
   rpc Update (Todo) returns (Todo);
   rpc Show (TodoId) returns (Todo);
@@ -20,7 +21,7 @@ message IndexResponse {
 
 message NewTodo{
   string title = 1;
-  string content = 2;
+  optional string content = 2;
 }
 
 message Todo{
