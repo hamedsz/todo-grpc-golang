@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go-grpc/internal/models"
 	"go-grpc/internal/rpc"
 	"go-grpc/internal/services/todo"
 	"google.golang.org/grpc"
@@ -9,7 +10,9 @@ import (
 )
 
 func main() {
-	var port = ":6565"
+	models.AutoMigrate()
+
+	var port = ":9090"
 	lis , err := net.Listen("tcp" , port)
 	if err != nil{
 		log.Fatalf("failed to listen: %v" , err)

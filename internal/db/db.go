@@ -1,6 +1,7 @@
 package db
 
 import (
+	"go-grpc/config"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -8,14 +9,22 @@ import (
 var database *gorm.DB
 
 func GetDB() *gorm.DB {
-	if database != nil{
-		return database
+	if database == nil{
+		RefreshDB()
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	return database
+}
+
+func SetDB(db *gorm.DB)  {
+	database = db
+}
+
+func RefreshDB()  {
+	db, err := gorm.Open(sqlite.Open(config.Database.Name), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
+
 	database = db
-	return db
 }
